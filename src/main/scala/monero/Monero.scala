@@ -8,7 +8,7 @@ import java.util.{Timer, TimerTask}
 
 import javax.imageio.ImageIO
 import javax.sound.sampled.AudioSystem
-import javax.swing.{ImageIcon, JFrame, JLabel, SwingConstants, WindowConstants}
+import javax.swing.{ImageIcon, JFrame, JLabel, SwingConstants}
 import org.json4s.JsonAST.{JString, JValue}
 import org.json4s.jackson.JsonMethods._
 import scalaj.http._
@@ -44,7 +44,12 @@ object Monero {
   timer.schedule(new CheckPrice, 0, 60000)
 
   def main(args: Array[String]): Unit = {
-    gui()
+    frame.getContentPane.add(picLabel, BorderLayout.CENTER)
+    frame.getContentPane.add(priceLabel, BorderLayout.NORTH)
+    frame.setSize(new Dimension(500,500))
+    frame.setResizable(false)
+    frame.setLocationRelativeTo(null)
+    frame.setVisible(true)
   }
 
   def request(): JValue = {
@@ -74,14 +79,5 @@ object Monero {
     clip.start()
     Thread.sleep(2000)
     clip.stop()
-  }
-
-  def gui(): Unit = {
-    frame.getContentPane.add(picLabel, BorderLayout.CENTER)
-    frame.getContentPane.add(priceLabel, BorderLayout.NORTH)
-    frame.setSize(new Dimension(500,500))
-    frame.setResizable(false)
-    frame.setLocationRelativeTo(null)
-    frame.setVisible(true)
   }
 }
