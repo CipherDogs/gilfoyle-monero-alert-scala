@@ -1,23 +1,43 @@
 package monero
 
-import java.awt.{Dimension, Image}
+import java.awt.{BorderLayout, Color, Dimension, Image}
+import java.awt.event.{WindowAdapter, WindowEvent}
+import java.awt.image.BufferedImage
+import java.io.BufferedInputStream
+import java.util.{Timer, TimerTask}
+
 import javax.imageio.ImageIO
-import javax.swing.{ImageIcon, JFrame, JLabel, WindowConstants}
+import javax.sound.sampled.AudioSystem
+import javax.swing.{ImageIcon, JFrame, JLabel, SwingConstants, WindowConstants}
 import org.json4s.JsonAST.{JString, JValue}
 import org.json4s.jackson.JsonMethods._
 import scalaj.http._
 
+class CheckPrice extends TimerTask {
+  def run(): Unit = {
+    val (price, change) = Monero.getData
+    Monero.priceLabel.setText(price + "$")
+    if (change < 0.0) Monero.alertAudio()
+  }
+}
+
 object Monero {
+  val back: BufferedImage = ImageIO.read(getClass.getResource("/back.png"))
+  val picLabel = new JLabel(new ImageIcon(back.getScaledInstance(500,500,Image.SCALE_FAST)))
+
+  val priceLabel = new JLabel("$", SwingConstants.CENTER)
+  priceLabel.setOpaque(true)
+  priceLabel.setFont(priceLabel.getFont.deriveFont(44.0f))
+  priceLabel.setBackground(Color.BLACK)
+  priceLabel.setForeground(new Color(227,29,26))
+
+  val frame = new JFrame("Gilfoyle Monero Alert")
+
+  val timer = new Timer
+  timer.schedule(new CheckPrice, 0, 60000)
+
   def main(args: Array[String]): Unit = {
-
     gui()
-
-    val (price, change) = getData
-
-    println(s"Price: $price")
-    if (change < 0.0) {
-      println("Alert!")
-    }
   }
 
   def request(): JValue = {
@@ -27,27 +47,38 @@ object Monero {
 
   def getData: (Double, Double) = {
     val json = request()
-
     val price: Double = json \ "ticker" \ "price" match {
       case JString(s) => s.toDouble
       case _ => 0
     }
-
     val change: Double = json \ "ticker" \ "change" match {
       case JString(s) => s.toDouble
       case _ => 0.0
     }
-
     (price, change)
   }
 
+  def alertAudio(): Unit = {
+    val is = getClass.getResourceAsStream("/baaah.wav")
+    val buf = new BufferedInputStream(is)
+    val audio = AudioSystem.getAudioInputStream(buf)
+    val clip = AudioSystem.getClip
+    clip.open(audio)
+    clip.start()
+    Thread.sleep(2000)
+    clip.stop()
+  }
+
   def gui(): Unit = {
-
-    val back = ImageIO.read(getClass.getResource("/back.png"))
-    val picLabel = new JLabel(new ImageIcon(back.getScaledInstance(500,500,Image.SCALE_FAST)))
-
-    val frame = new JFrame("Gilfoyle Monero Alert")
-    frame.getContentPane.add(picLabel)
+    frame.addWindowListener(new WindowAdapter() {
+      def WindowClosing(e: WindowEvent): Unit = {
+        timer.cancel()
+        timer.purge()
+        System.exit(0)
+      }
+    })
+    frame.getContentPane.add(picLabel, BorderLayout.CENTER)
+    frame.getContentPane.add(priceLabel, BorderLayout.NORTH)
     frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
     frame.setSize(new Dimension(500,500))
     frame.setResizable(false)
