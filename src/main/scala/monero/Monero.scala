@@ -32,6 +32,13 @@ object Monero {
   priceLabel.setForeground(new Color(227,29,26))
 
   val frame = new JFrame("Gilfoyle Monero Alert")
+  frame.addWindowListener(new WindowAdapter {
+    override def windowClosing(e: WindowEvent): Unit = {
+      timer.cancel()
+      timer.purge()
+      System.exit(0)
+    }
+  })
 
   val timer = new Timer
   timer.schedule(new CheckPrice, 0, 60000)
@@ -70,16 +77,8 @@ object Monero {
   }
 
   def gui(): Unit = {
-    frame.addWindowListener(new WindowAdapter() {
-      def WindowClosing(e: WindowEvent): Unit = {
-        timer.cancel()
-        timer.purge()
-        System.exit(0)
-      }
-    })
     frame.getContentPane.add(picLabel, BorderLayout.CENTER)
     frame.getContentPane.add(priceLabel, BorderLayout.NORTH)
-    frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
     frame.setSize(new Dimension(500,500))
     frame.setResizable(false)
     frame.setLocationRelativeTo(null)
