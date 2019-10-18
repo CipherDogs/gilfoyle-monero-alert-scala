@@ -1,6 +1,6 @@
 name := "gilfoyle-monero-alert"
 
-version := "1.0"
+version := "1.1"
 
 scalaVersion := "2.13.1"
 
