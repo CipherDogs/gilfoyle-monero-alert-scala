@@ -5,7 +5,6 @@ import java.awt.event.{WindowAdapter, WindowEvent}
 import java.awt.image.BufferedImage
 import java.io.BufferedInputStream
 import java.util.{Timer, TimerTask}
-
 import javax.imageio.ImageIO
 import javax.sound.sampled.AudioSystem
 import javax.swing.{ImageIcon, JFrame, JLabel, SwingConstants}
@@ -15,13 +14,13 @@ import scalaj.http._
 
 class CheckPrice extends TimerTask {
   def run(): Unit = {
-    val (price, change) = Monero.getData
-    Monero.priceLabel.setText(price + "$")
-    if (change < 0.0) Monero.alertAudio()
+    val (price, change) = Main.getData
+    Main.priceLabel.setText(price + "$")
+    if (change < 0.0) Main.alertAudio()
   }
 }
 
-object Monero {
+object Main extends App {
   val back: BufferedImage = ImageIO.read(getClass.getResource("/back.png"))
   val picLabel = new JLabel(new ImageIcon(back.getScaledInstance(500,500,Image.SCALE_FAST)))
 
@@ -39,18 +38,15 @@ object Monero {
       System.exit(0)
     }
   })
+  frame.getContentPane.add(picLabel, BorderLayout.CENTER)
+  frame.getContentPane.add(priceLabel, BorderLayout.NORTH)
+  frame.setSize(new Dimension(500,500))
+  frame.setResizable(false)
+  frame.setLocationRelativeTo(null)
+  frame.setVisible(true)
 
   val timer = new Timer
   timer.schedule(new CheckPrice, 0, 60000)
-
-  def main(args: Array[String]): Unit = {
-    frame.getContentPane.add(picLabel, BorderLayout.CENTER)
-    frame.getContentPane.add(priceLabel, BorderLayout.NORTH)
-    frame.setSize(new Dimension(500,500))
-    frame.setResizable(false)
-    frame.setLocationRelativeTo(null)
-    frame.setVisible(true)
-  }
 
   def request(): JValue = {
     val response: HttpResponse[String] = Http("https://api.cryptonator.com/api/ticker/xmr-usd").asString
