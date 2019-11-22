@@ -11,18 +11,18 @@ import javax.swing.{ImageIcon, JFrame, JLabel, JPanel, SwingConstants}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class CheckPrice extends TimerTask {
-  def run(): Unit = {
-    Request.getPrice.onComplete(data => {
-      val (price, change) = if (data.isSuccess) data.get else (0.0, 0.0)
+  def run(): Unit =
+    for {
+      dataPrice <- Request.getPrice
+      dataStat  <- Request.getStat
+    } {
+      val (price, change) = dataPrice
       Main.priceLabel.setText("<html>Price<br>" + price.toFloat + "$</html>")
       if (change < 0.0) Main.alertAudio()
-    })
 
-    Request.getStat.onComplete(data => {
-      val (height, difficulty) = if (data.isSuccess) data.get else (0, 0)
+      val (height, difficulty) = dataStat
       Main.statLabel.setText("<html>Height<br>" + height.toString + "<br><br>Difficulty<br>" + difficulty.toString + "</html>")
-    })
-  }
+    }
 }
 
 object Main extends App {
