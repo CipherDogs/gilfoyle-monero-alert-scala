@@ -4,26 +4,15 @@ import java.awt.{BorderLayout, Color, Dimension, Image}
 import java.awt.event.{WindowAdapter, WindowEvent}
 import java.awt.image.BufferedImage
 import java.io.BufferedInputStream
-import java.util.{Timer, TimerTask}
+
 import javax.imageio.ImageIO
 import javax.sound.sampled.AudioSystem
 import javax.swing.{ImageIcon, JFrame, JLabel, JPanel, SwingConstants}
+import monix.execution.Scheduler
+
 import scala.concurrent.ExecutionContext.Implicits.global
-
-class CheckPrice extends TimerTask {
-  def run(): Unit =
-    for {
-      dataPrice <- Request.getPrice
-      dataStat  <- Request.getStat
-    } {
-      val (price, change) = dataPrice
-      Main.priceLabel.setText("<html>Price<br>" + price.toFloat + "$</html>")
-      if (change < 0.0) Main.alertAudio()
-
-      val (height, difficulty) = dataStat
-      Main.statLabel.setText("<html>Height<br>" + height.toString + "<br><br>Difficulty<br>" + difficulty.toString + "</html>")
-    }
-}
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 object Main extends App {
   val back: BufferedImage = ImageIO.read(getClass.getResource("/back.png"))
@@ -51,8 +40,7 @@ object Main extends App {
   val frame = new JFrame("Gilfoyle Monero Alert")
   frame.addWindowListener(new WindowAdapter {
     override def windowClosing(e: WindowEvent): Unit = {
-      timer.cancel()
-      timer.purge()
+      scheduler.shutdown()
       System.exit(0)
     }
   })
@@ -63,8 +51,20 @@ object Main extends App {
   frame.setLocationRelativeTo(null)
   frame.setVisible(true)
 
-  val timer = new Timer
-  timer.schedule(new CheckPrice, 0, 60000)
+  val scheduler = Scheduler.io("test")
+  scheduler.scheduleAtFixedRate(0.seconds, 60.seconds) {
+    for {
+      dataPrice <- Request.getPrice
+      dataStat  <- Request.getStat
+    } {
+      val (price, change) = dataPrice
+      priceLabel.setText("<html>Price<br>" + price.toFloat + "$</html>")
+      if (change < 0.0) alertAudio()
+
+      val (height, difficulty) = dataStat
+      statLabel.setText("<html>Height<br>" + height.toString + "<br><br>Difficulty<br>" + difficulty.toString + "</html>")
+    }
+  }
 
   def alertAudio(): Unit = {
     val is    = getClass.getResourceAsStream("/baaah.wav")
