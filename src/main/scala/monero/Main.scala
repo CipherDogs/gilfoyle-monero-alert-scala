@@ -51,7 +51,7 @@ object Main extends App {
   frame.setLocationRelativeTo(null)
   frame.setVisible(true)
 
-  val scheduler = Scheduler.io("test")
+  val scheduler = Scheduler.io("Gilfoyle")
   scheduler.scheduleAtFixedRate(0.seconds, 60.seconds) {
     for {
       dataPrice <- Request.getPrice
